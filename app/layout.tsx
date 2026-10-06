@@ -62,6 +62,14 @@ export default function RootLayout({
         />
       </head>
       <body className={`${sans.variable} ${display.variable}`}>
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-NCWZ3RSM"
+            height="0"
+            width="0"
+            style={{ display: 'none', visibility: 'hidden' }}
+          />
+        </noscript>
         <SkipLink />
         <StructuredData data={organizationSchema} />
         {children}
