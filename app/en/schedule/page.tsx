@@ -1,0 +1,4 @@
+import {SiteHeader} from '../../components/SiteHeader';
+import {SiteFooter} from '../../components/SiteFooter';
+import {CalendlyEmbed} from '../../agendar/CalendlyEmbed';
+export default function Page(){const calendlyUrl=process.env.NEXT_PUBLIC_CALENDLY_URL;return <><SiteHeader/><main id="conteudo" className="schedulePage"><section className="shell scheduleGrid"><div><p className="eyebrow">INITIAL CONVERSATION</p><h1>Choose the best day and time.</h1><p className="leadSmall">See available times in Calendly and confirm a conversation directly in Benê’s calendar.</p><div className="scheduleNotes"><div><b>Up to 30 minutes</b><span>To understand context and the next step.</span></div><div><b>Immediate confirmation</b><span>The appointment is added as soon as you choose a time.</span></div><div><b>Live availability</b><span>Only open times are displayed.</span></div></div></div><CalendlyEmbed url={calendlyUrl} locale="en"/></section></main><SiteFooter/></>}

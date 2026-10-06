@@ -1,0 +1,5 @@
+import type {MetadataRoute} from 'next';
+import {SITE_URL} from './lib/site';
+import {articles} from './blog/blog-data';
+import {articlesEn} from './en/blog/blog-data-en';
+export default function sitemap():MetadataRoute.Sitemap{const modified=new Date('2026-08-28T12:00:00-03:00');const routes=[['',1],['/blog',.8],['/agendar',.8],['/planos/start',.8],['/planos/pro',.8],['/planos/full',.8],['/privacidade',.3],['/termos',.3],['/en',.9],['/en/blog',.8],['/en/schedule',.8],['/en/plans/start',.8],['/en/plans/pro',.8],['/en/plans/full',.8],['/en/privacy',.3],['/en/terms',.3]] as const;return [...routes.map(([path,priority])=>({url:`${SITE_URL}${path}`,lastModified:modified,changeFrequency:(path===''||path==='/en'?'weekly':'monthly') as 'weekly'|'monthly',priority})),...articles.map(article=>({url:`${SITE_URL}/blog/${article.slug}`,lastModified:modified,changeFrequency:'monthly' as const,priority:.7})),...articlesEn.map(article=>({url:`${SITE_URL}/en/blog/${article.slug}`,lastModified:modified,changeFrequency:'monthly' as const,priority:.7}))]}

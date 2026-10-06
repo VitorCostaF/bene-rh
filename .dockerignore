@@ -1,0 +1,10 @@
+.git
+.env*
+!.env.example
+node_modules
+dist
+.next
+.vinext
+.wrangler
+data
+outputs

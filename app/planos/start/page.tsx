@@ -1,0 +1,3 @@
+import type {Metadata} from 'next';import PlanDetail from '../PlanDetail';import {plans} from '../plan-data';import {SITE_URL} from '../../lib/site';
+export const metadata:Metadata={title:'Benê Start — RH para pequenas empresas',description:'RH organizado, recrutamento, onboarding e suporte para empresas com até 10 pessoas.',alternates:{canonical:'/planos/start'},openGraph:{url:`${SITE_URL}/planos/start`,title:'Benê Start | RH para pequenas empresas',description:'Seu RH organizado desde o começo, com apoio próximo da Benê.'}};
+export default function Page(){return <PlanDetail plan={plans.start}/>}

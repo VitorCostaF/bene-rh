@@ -1,0 +1,3 @@
+import type {Metadata} from 'next';import PlanDetail from '../PlanDetail';import {plans} from '../plan-data';import {SITE_URL} from '../../lib/site';
+export const metadata:Metadata={title:'Benê Full — RH estratégico para PMEs',description:'RH estratégico, performance, educação corporativa e inteligência de pessoas para empresas com até 60 pessoas.',alternates:{canonical:'/planos/full'},openGraph:{url:`${SITE_URL}/planos/full`,title:'Benê Full | RH estratégico para PMEs',description:'Estrutura completa de RH sob demanda para empresas com até 60 pessoas.'}};
+export default function Page(){return <PlanDetail plan={plans.full}/>}

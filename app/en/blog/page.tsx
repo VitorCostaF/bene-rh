@@ -1,0 +1,5 @@
+import Link from 'next/link';
+import {SiteHeader} from '../../components/SiteHeader';
+import {SiteFooter} from '../../components/SiteFooter';
+import {articlesEn} from './blog-data-en';
+export default function Page(){return <><SiteHeader/><main id="conteudo" className="blogPage"><header className="blogHero"><div className="shell"><p className="eyebrow">BENÊ RH BLOG</p><h1>HR explained without complications.</h1><p>Practical content to hire better, organize routines and make clearer people decisions.</p></div></header><section className="section shell"><div className="blogGrid">{articlesEn.map(article=><article className="articleCard" key={article.slug}><span>{article.category}</span><h2><Link href={`/en/blog/${article.slug}`}>{article.title}</Link></h2><p>{article.description}</p><footer><small>{article.reading}</small><Link href={`/en/blog/${article.slug}`}>Read article →</Link></footer></article>)}</div><div className="blogCta"><p className="eyebrow">NOT SURE WHERE TO START?</p><h2>Discover which HR topic needs attention now.</h2><Link className="button" href="/en#diagnostico">Start the Benê Diagnosis</Link></div></section></main><SiteFooter/></>}

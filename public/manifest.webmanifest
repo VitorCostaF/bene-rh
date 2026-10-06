@@ -1,0 +1,10 @@
+{
+  "name": "Benê RH",
+  "short_name": "Benê RH",
+  "description": "RH sob demanda para pequenas e médias empresas.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbf8f3",
+  "theme_color": "#3d2314",
+  "icons": [{"src":"/bene-favicon.png","sizes":"512x512","type":"image/png"}]
+}
