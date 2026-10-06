@@ -1,8 +1,8 @@
 export const SITE_URL = 'https://benerh.com.br';
 export const SITE_NAME = 'Benê RH';
 export const CNPJ = '68.268.439/0001-33';
-export const WHATSAPP_NUMBER = '5511992874456';
-export const WHATSAPP_DISPLAY = '(11) 99287-4456';
+export const WHATSAPP_NUMBER = '5511932147954';
+export const WHATSAPP_DISPLAY = '(11) 93214-7954';
 export const LAST_UPDATED = '28 de agosto de 2026';
 
 export const isIndexable = process.env.NEXT_PUBLIC_SITE_INDEXABLE === 'true';
