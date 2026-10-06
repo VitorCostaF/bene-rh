@@ -1,0 +1,35 @@
+# dependências
+node_modules
+
+# builds
+dist
+.next
+.vinext
+.wrangler
+out
+*.tsbuildinfo
+next-env.d.ts
+
+# variáveis de ambiente (mantém o exemplo)
+.env*
+!.env.example
+
+# dados locais (SQLite da newsletter)
+data
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
+
+# saídas geradas
+outputs
+
+# logs
+*.log
+npm-debug.log*
+
+# sistema / editor
+.DS_Store
+Thumbs.db
+.idea
+.vscode
