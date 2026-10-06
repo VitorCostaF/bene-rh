@@ -1,20 +1,41 @@
 services:
   bene-rh:
+    container_name: bene-rh
     build:
       context: .
       args:
         NEXT_PUBLIC_SITE_INDEXABLE: "true"
         NEXT_PUBLIC_CALENDLY_URL: "https://calendly.com/parcerias-amandastamboni/30min"
-    container_name: bene-rh
     restart: unless-stopped
     environment:
       HOST: 0.0.0.0
-      PORT: 3000
+      PORT: 3001
       BENE_DATA_DIR: /data
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3001"
+    networks:
+      - traefik-public
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.benerh.rule=Host(`benerh.com.br`)
+      - traefik.http.routers.benerh.entrypoints=web,websecure
+      - traefik.http.routers.benerh.tls.certresolver=myresolver
+      - traefik.http.routers.benerh.tls=true
+      - traefik.http.middlewares.benerh.headers.SSLRedirect=true
+      - traefik.http.middlewares.benerh.headers.STSSeconds=315360000
+      - traefik.http.middlewares.benerh.headers.browserXSSFilter=true
+      - traefik.http.middlewares.benerh.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.benerh.headers.forceSTSHeader=true
+      - traefik.http.middlewares.benerh.headers.SSLHost=ainovia.com.br
+      - traefik.http.middlewares.benerh.headers.STSIncludeSubdomains=true
+      - traefik.http.middlewares.benerh.headers.STSPreload=true
     volumes:
+      - ./dist:/usr/share/nginx/html
       - bene-rh-data:/data
 
 volumes:
   bene-rh-data:
+
+networks:
+  traefik-public:
+    external: true
