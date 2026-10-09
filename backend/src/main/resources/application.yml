@@ -16,7 +16,9 @@ spring:
     properties:
       hibernate.jdbc.time_zone: UTC
   flyway:
-    enabled: true
+    # As migrations rodam no serviço "flyway" do docker-compose, não ao subir a aplicação.
+    # Para rodar em desenvolvimento local: FLYWAY_ENABLED=true
+    enabled: ${FLYWAY_ENABLED:false}
 
 app:
   cors:

@@ -51,15 +51,21 @@ Requer Java 21 e Maven.
 # testes (usam H2 em modo MySQL, não precisam de banco)
 mvn test
 
-# local, com um MySQL em localhost:3306 (banco/usuário/senha "benerh")
-mvn spring-boot:run
+# local, com um MySQL em localhost:3306 (banco/usuário/senha "benerh").
+# A aplicação não roda as migrations sozinha; para isso em desenvolvimento, use FLYWAY_ENABLED=true
+FLYWAY_ENABLED=true mvn spring-boot:run
 ```
 
-Variáveis: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `PORT` (padrão 8080) e `CORS_ALLOWED_ORIGINS`.
+Variáveis: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `PORT` (padrão 8080), `CORS_ALLOWED_ORIGINS` e `FLYWAY_ENABLED` (padrão `false`).
 
 ## Produção (Docker + Traefik)
 
-O MySQL já existe, então o `docker-compose.yml` sobe **só a API**.
+O MySQL já existe, então o `docker-compose.yml` não sobe banco. Ele tem dois serviços:
+
+- `flyway`: roda `flyway migrate` com os arquivos de `src/main/resources/db/migration`, aplica o que falta e termina.
+- `diagnostico-api`: só sobe depois que o `flyway` conclui com sucesso (`service_completed_successfully`). A aplicação tem o Flyway **desligado** por padrão e apenas valida o schema (`ddl-auto: validate`).
+
+Para uma nova migration, crie `V2__descricao.sql` na mesma pasta e rode `docker compose up -d --build`; o serviço `flyway` aplica antes da API iniciar.
 
 1. No MySQL, crie o banco e um usuário para a API (uma vez). Ele precisa poder criar tabelas, porque o Flyway roda as migrations ao iniciar:
 

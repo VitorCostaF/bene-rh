@@ -4,6 +4,9 @@ spring:
     username: sa
     password: ""
 
+  flyway:
+    enabled: true
+
 app:
   cors:
     allowed-origins: https://benerh.com.br
