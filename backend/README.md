@@ -59,12 +59,22 @@ Variáveis: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `PORT` (padrão 8080) e `CORS_AL
 
 ## Produção (Docker + Traefik)
 
+O MySQL já existe, então o `docker-compose.yml` sobe **só a API**.
+
+1. No MySQL, crie o banco e um usuário para a API (uma vez). Ele precisa poder criar tabelas, porque o Flyway roda as migrations ao iniciar:
+
+```sql
+CREATE DATABASE benerh CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'benerh'@'%' IDENTIFIED BY 'uma-senha-forte';
+GRANT ALL PRIVILEGES ON benerh.* TO 'benerh'@'%';
+```
+
+2. Configure a conexão e suba:
+
 ```bash
-cp .env.example .env   # troque as senhas
+cp .env.example .env   # ajuste DB_URL, DB_USER e DB_PASSWORD
 docker compose up -d --build
 ```
 
-O `docker-compose.yml` sobe o MySQL e a API e registra no Traefik a rota
-`benerh.com.br/diagnostico` (prioridade maior que a do site), então o site chama o
-endpoint na mesma origem e o CORS nem entra em jogo. Requer a rede externa
-`traefik-public`, a mesma já usada pelo serviço do site.
+- `DB_URL` com `host.docker.internal` serve para o MySQL rodando no próprio servidor. Se o MySQL for outro container, use o nome dele no `DB_URL` e coloque a API na mesma rede Docker (veja o comentário no compose).
+- O compose registra no Traefik a rota `benerh.com.br/diagnostico` (prioridade maior que a do site), então o site chama o endpoint na mesma origem e o CORS nem entra em jogo. Requer a rede externa `traefik-public`, a mesma do serviço do site.

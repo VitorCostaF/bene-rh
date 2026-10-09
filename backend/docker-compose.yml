@@ -1,44 +1,26 @@
-# API do diagnóstico + MySQL.
-# Uso:  cp .env.example .env  (ajuste as senhas)  &&  docker compose up -d --build
+# API do diagnóstico. O MySQL já existe: aqui só configuramos a conexão com ele.
+# Uso:  cp .env.example .env  (ajuste DB_URL/DB_USER/DB_PASSWORD)  &&  docker compose up -d --build
 #
 # O site chama POST https://benerh.com.br/diagnostico. Os labels do Traefik abaixo
 # mandam só esse caminho para a API; o resto do domínio continua no serviço do site.
 services:
-  mysql:
-    image: mysql:8.4
-    container_name: bene-diagnostico-mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: benerh
-      MYSQL_USER: ${DB_USER:-benerh}
-      MYSQL_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?defina DB_ROOT_PASSWORD no .env}
-    volumes:
-      - bene-diagnostico-mysql:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u${DB_USER:-benerh}", "-p${DB_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    networks:
-      - internal
-
   diagnostico-api:
     container_name: bene-diagnostico-api
     build: .
     restart: unless-stopped
-    depends_on:
-      mysql:
-        condition: service_healthy
     environment:
       PORT: 8080
-      DB_URL: jdbc:mysql://mysql:3306/benerh?serverTimezone=UTC
-      DB_USER: ${DB_USER:-benerh}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_URL: ${DB_URL:?defina DB_URL no .env}
+      DB_USER: ${DB_USER:?defina DB_USER no .env}
+      DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://benerh.com.br,https://www.benerh.com.br}
+    # Permite usar host.docker.internal no DB_URL quando o MySQL roda no próprio servidor (fora do Docker).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
-      - internal
       - traefik-public
+      # Se o MySQL for um container em outra rede Docker, adicione essa rede aqui
+      # e declare-a como "external: true" na seção networks abaixo.
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-public
@@ -49,10 +31,6 @@ services:
       - traefik.http.routers.benerh-diagnostico.tls=true
       - traefik.http.services.benerh-diagnostico.loadbalancer.server.port=8080
 
-volumes:
-  bene-diagnostico-mysql:
-
 networks:
-  internal:
   traefik-public:
     external: true
