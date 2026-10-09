@@ -1,0 +1,59 @@
+# API do diagnóstico. O MySQL já existe: aqui só configuramos a conexão com ele.
+# As migrations (Flyway) rodam no serviço "flyway" antes de a API subir; a API não migra sozinha.
+# Uso:  cp .env.example .env  (ajuste DB_URL/DB_USER/DB_PASSWORD)  &&  docker compose up -d --build
+#
+# O site chama POST https://benerh.com.br/diagnostico. Os labels do Traefik abaixo
+# mandam só esse caminho para a API; o resto do domínio continua no serviço do site.
+services:
+  flyway:
+    image: flyway/flyway:11
+    container_name: bene-diagnostico-flyway
+    # Roda as migrations e termina. A API só sobe depois que ele conclui com sucesso.
+    command: -connectRetries=10 migrate
+    restart: "no"
+    environment:
+      FLYWAY_URL: ${DB_URL:?defina DB_URL no .env}
+      FLYWAY_USER: ${DB_USER:?defina DB_USER no .env}
+      FLYWAY_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+    volumes:
+      - ./src/main/resources/db/migration:/flyway/sql:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Mesma rede do MySQL que a API usar (veja o comentário em "networks" da API).
+    networks:
+      - traefik-public
+
+  diagnostico-api:
+    container_name: bene-diagnostico-api
+    build: .
+    restart: unless-stopped
+    depends_on:
+      flyway:
+        condition: service_completed_successfully
+    environment:
+      PORT: 8080
+      DB_URL: ${DB_URL:?defina DB_URL no .env}
+      DB_USER: ${DB_USER:?defina DB_USER no .env}
+      DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://benerh.com.br,https://www.benerh.com.br}
+    # Permite usar host.docker.internal no DB_URL quando o MySQL roda no próprio servidor (fora do Docker).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - traefik-public
+      # Se o MySQL for um container em outra rede Docker, adicione essa rede aqui
+      # e declare-a como "external: true" na seção networks abaixo.
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.http.routers.benerh-diagnostico.rule=Host(`benerh.com.br`) && PathPrefix(`/diagnostico`)
+      - traefik.http.routers.benerh-diagnostico.priority=100
+      - traefik.http.routers.benerh-diagnostico.entrypoints=web,websecure
+      - traefik.http.routers.benerh-diagnostico.tls.certresolver=myresolver
+      - traefik.http.routers.benerh-diagnostico.tls=true
+      - traefik.http.services.benerh-diagnostico.loadbalancer.server.port=8080
+
+networks:
+  traefik-public:
+    external: true

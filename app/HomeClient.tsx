@@ -5,7 +5,7 @@ import { SiteHeader } from "./components/SiteHeader";
 import { SiteFooter } from "./components/SiteFooter";
 import { NewsletterSection } from "./components/NewsletterForm";
 import { BrandMarquee } from "./components/BrandMarquee";
-import { whatsappUrl } from "./lib/site";
+import { DIAGNOSTIC_ENDPOINT, whatsappUrl } from "./lib/site";
 type Pain = "vaga" | "estrutura" | "recorrente" | "sensivel";
 type A = { label: string; value: number; pain?: Pain };
 type Q = { id: string; title: string; answers: A[] };
@@ -127,9 +127,9 @@ const questions: Q[] = [
   },
   {
     id: "consentimento",
-    title: "Posso usar estas respostas só para gerar sua leitura local?",
+    title: "Posso enviar estas respostas à Benê para gerar sua leitura e retornar o contato?",
     answers: [
-      { label: "Sim, gerar minha leitura", value: 6 },
+      { label: "Sim, enviar e gerar minha leitura", value: 6 },
       { label: "Não, voltar ao início", value: 0 },
     ],
   },
@@ -154,6 +154,17 @@ const plans = [
     "Pro + RH estratégico, educação corporativa e apoio de compliance",
   ],
 ];
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function parseContact(raw: string) {
+  const value = raw.trim();
+  if (value.length <= 254 && emailPattern.test(value))
+    return { type: "email" as const, value: value.toLowerCase() };
+  const digits = value.replace(/\D/g, "");
+  const national = digits.startsWith("55") ? digits.slice(2) : digits;
+  if (/^[1-9]{2}9?\d{8}$/.test(national))
+    return { type: "phone" as const, value: "55" + national };
+  return null;
+}
 function track(
   event: string,
   props: Record<string, string | number | boolean> = {},
@@ -169,7 +180,11 @@ function track(
 export default function Home() {
   const [step, setStep] = useState(0),
     [answers, setAnswers] = useState<A[]>([]),
-    [done, setDone] = useState(false);
+    [done, setDone] = useState(false),
+    [awaitingContact, setAwaitingContact] = useState(false),
+    [contact, setContact] = useState(""),
+    [sending, setSending] = useState(false),
+    [sendError, setSendError] = useState("");
   const questionRef = useRef<HTMLHeadingElement>(null);
   const didInteract = useRef(false);
   useEffect(() => {
@@ -189,7 +204,7 @@ export default function Home() {
   useEffect(() => {
     if (didInteract.current) questionRef.current?.focus();
     else didInteract.current = true;
-  }, [step, done]);
+  }, [step, done, awaitingContact]);
   const sensitive = answers.some((a) => a.pain === "sensivel");
   const pain = useMemo(() => {
     const c: Record<string, number> = {};
@@ -221,10 +236,64 @@ export default function Home() {
             "Diagnóstico + Estruturação",
             "A rota indicada é organizar gargalos, até três processos e um plano de 90 dias.",
           ];
+  const parsedContact = parseContact(contact);
   function reset() {
     setStep(0);
     setAnswers([]);
     setDone(false);
+    setAwaitingContact(false);
+    setContact("");
+    setSendError("");
+  }
+  async function submitDiagnostic() {
+    if (!parsedContact || sending) return;
+    setSending(true);
+    setSendError("");
+    const utm: Record<string, string> = {};
+    [
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "utm_content",
+      "utm_term",
+    ].forEach((k) => {
+      const v = sessionStorage.getItem(k);
+      if (v) utm[k] = v;
+    });
+    const score = answers.reduce((t, x) => t + x.value, 0);
+    try {
+      const response = await fetch(DIAGNOSTIC_ENDPOINT, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          contact: parsedContact,
+          answers: answers.map((a, i) => ({
+            id: questions[i].id,
+            question: questions[i].title,
+            answer: a.label,
+            value: a.value,
+          })),
+          score,
+          route: result[1],
+          consent: true,
+          source: "site-diagnostico",
+          locale: "pt",
+          page: location.href,
+          submittedAt: new Date().toISOString(),
+          utm,
+        }),
+      });
+      if (!response.ok) throw new Error("request failed");
+      track("diagnostic_complete", { score, sensitive: false });
+      setAwaitingContact(false);
+      setDone(true);
+    } catch {
+      setSendError(
+        "Não foi possível enviar agora. Confira sua conexão e tente novamente.",
+      );
+    } finally {
+      setSending(false);
+    }
   }
   function choose(a: A) {
     if (questions[step].id === "consentimento" && a.label.startsWith("Não"))
@@ -240,13 +309,8 @@ export default function Home() {
       track("diagnostic_sensitive_stop", { step: step + 1 });
       return;
     }
-    if (step === questions.length - 1) {
-      setDone(true);
-      track("diagnostic_complete", {
-        score: n.reduce((s, x) => s + x.value, 0),
-        sensitive: false,
-      });
-    } else setStep(step + 1);
+    if (step === questions.length - 1) setAwaitingContact(true);
+    else setStep(step + 1);
   }
   const cta = (label: string) => (
     <a
@@ -514,8 +578,9 @@ export default function Home() {
               <p className="eyebrow">DIAGNÓSTICO BENÊ</p>
               <h2>Descubra a prioridade do seu RH.</h2>
               <p>
-                São 12 perguntas. A leitura é gerada no seu navegador; suas
-                respostas não são enviadas à Benê.
+                São 12 perguntas. Ao final, você informa um e-mail ou WhatsApp e
+                suas respostas são enviadas à Benê para gerar a leitura e
+                retornarmos o contato.
               </p>
               <div className="privacyNote">
                 Não descreva nomes, denúncias ou informações pessoais. Se houver
@@ -524,7 +589,65 @@ export default function Home() {
               </div>
             </div>
             <div className="quiz">
-              {!done ? (
+              {!done && awaitingContact ? (
+                <>
+                  <small>ÚLTIMO PASSO</small>
+                  <h3 ref={questionRef} tabIndex={-1}>
+                    Para onde enviamos sua leitura?
+                  </h3>
+                  <form
+                    className="newsletterField"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      submitDiagnostic();
+                    }}
+                    noValidate
+                  >
+                    <label htmlFor="diagnostic-contact">
+                      E-mail ou WhatsApp com DDD
+                    </label>
+                    <input
+                      id="diagnostic-contact"
+                      className="diagnosticContact"
+                      type="text"
+                      inputMode="email"
+                      autoComplete="email tel"
+                      value={contact}
+                      onChange={(e) => setContact(e.target.value)}
+                      placeholder="voce@empresa.com.br ou (11) 91234-5678"
+                      aria-invalid={contact.trim() !== "" && !parsedContact}
+                      aria-describedby="diagnostic-contact-msg"
+                    />
+                    <p
+                      id="diagnostic-contact-msg"
+                      className={`formMessage ${sendError ? "error" : ""}`}
+                      role={sendError ? "alert" : undefined}
+                    >
+                      {sendError ||
+                        (contact.trim() !== "" && !parsedContact
+                          ? "Informe um e-mail válido ou um número com DDD."
+                          : "Usaremos este contato só para retornar sobre o diagnóstico.")}
+                    </p>
+                    <button
+                      className="button"
+                      type="submit"
+                      disabled={!parsedContact || sending}
+                    >
+                      {sending ? "Enviando…" : "Enviar e ver minha leitura"}
+                    </button>
+                  </form>
+                  <button
+                    className="reset"
+                    onClick={() => {
+                      setAnswers(answers.slice(0, -1));
+                      setAwaitingContact(false);
+                      setSendError("");
+                    }}
+                  >
+                    Voltar
+                  </button>
+                </>
+              ) : !done ? (
                 <>
                   <div
                     className="progress"

@@ -154,3 +154,7 @@ html[data-theme="dark"] .cta{background:#0d0a08;color:#f7eee4}
   .siteHeader .mobileMenu summary{min-width:64px}
 }
 .button:hover{background:#A94B24;border-color:#713016}
+.button:disabled{opacity:.6;cursor:not-allowed;background:#aa8f80;border-color:#8f7769;box-shadow:0 2px 0 #766155;transform:none}
+.diagnosticContact{min-height:52px;padding:13px 14px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit;width:100%}
+.diagnosticContact[aria-invalid="true"]{border-color:#a4362d}
+.quiz .newsletterField .button{width:100%}

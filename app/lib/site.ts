@@ -1,5 +1,6 @@
 export const SITE_URL = 'https://benerh.com.br';
 export const SITE_NAME = 'Benê RH';
+export const DIAGNOSTIC_ENDPOINT = `${SITE_URL}/diagnostico`;
 export const CNPJ = '68.268.439/0001-33';
 export const WHATSAPP_NUMBER = '5511932147954';
 export const WHATSAPP_DISPLAY = '(11) 93214-7954';
