@@ -93,6 +93,20 @@ class DiagnosticoControllerTest {
     }
 
     @Test
+    void rejeitaSemEmailNemTelefone() throws Exception {
+        String semContato = body("null", true).replace("\"contact\":null,", "");
+        mvc.perform(post("/diagnostico").contentType(MediaType.APPLICATION_JSON).content(semContato))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/diagnostico").contentType(MediaType.APPLICATION_JSON)
+                        .content(body("null", true)))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/diagnostico").contentType(MediaType.APPLICATION_JSON)
+                        .content(body("{\"type\":\"email\",\"value\":\"\"}", true)))
+                .andExpect(status().isBadRequest());
+        assertThat(repository.count()).isZero();
+    }
+
+    @Test
     void rejeitaJsonQuebrado() throws Exception {
         mvc.perform(post("/diagnostico").contentType(MediaType.APPLICATION_JSON).content("{nope"))
                 .andExpect(status().isBadRequest());
