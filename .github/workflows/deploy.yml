@@ -1,0 +1,183 @@
+name: Deploy VPS
+
+# Dispara a cada commit na main. Isso inclui PRs mergeadas (o merge é um push na main).
+# PR fechada sem merge não altera a main, então não gera deploy.
+# Também pode ser disparado manualmente em Actions > Deploy VPS > Run workflow.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Um deploy por vez; se chegar outro commit, ele espera o atual terminar (não cancela no meio).
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Site (tsc + lint)
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npm run lint
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Backend (testes)
+        working-directory: backend
+        run: mvn -B test
+
+  deploy:
+    name: Deploy na VPS
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PORT: ${{ secrets.VPS_PORT }}
+      VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir secrets obrigatórios
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          missing=0
+          for name in VPS_HOST VPS_USER VPS_APP_PATH VPS_SSH_KEY DB_URL DB_USER DB_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Secret $name não configurado (Settings > Secrets and variables > Actions)."
+              missing=1
+            fi
+          done
+          # O .env do compose usa aspas simples; uma aspa simples dentro do valor quebraria o arquivo.
+          for name in DB_URL DB_USER DB_PASSWORD; do
+            case "${!name}" in
+              *"'"*) echo "::error::$name não pode conter aspas simples."; missing=1 ;;
+            esac
+          done
+          exit $missing
+
+      - name: Preparar SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          port="${VPS_PORT:-22}"
+          if [ -n "$VPS_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "$port" -H "$VPS_HOST" > ~/.ssh/known_hosts
+          fi
+          cat > ~/.ssh/config <<CONF
+          Host vps
+            HostName $VPS_HOST
+            User $VPS_USER
+            Port $port
+            IdentityFile ~/.ssh/id_deploy
+            IdentitiesOnly yes
+            ServerAliveInterval 30
+          CONF
+          sed -i 's/^ *//' ~/.ssh/config
+
+      - name: Gerar backend/.env com os secrets do banco
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
+        run: |
+          umask 077
+          {
+            printf "DB_URL='%s'\n" "$DB_URL"
+            printf "DB_USER='%s'\n" "$DB_USER"
+            printf "DB_PASSWORD='%s'\n" "$DB_PASSWORD"
+            if [ -n "$CORS_ALLOWED_ORIGINS" ]; then
+              printf "CORS_ALLOWED_ORIGINS='%s'\n" "$CORS_ALLOWED_ORIGINS"
+            fi
+          } > "$RUNNER_TEMP/backend.env"
+
+      - name: Enviar arquivos para a VPS
+        run: |
+          ssh vps "mkdir -p '$VPS_APP_PATH'"
+          rsync -az --delete \
+            --exclude='.git' --exclude='.github' \
+            --exclude='node_modules' --exclude='dist' --exclude='.next' --exclude='.vinext' \
+            --exclude='backend/target' \
+            --exclude='.env' --exclude='backend/.env' \
+            --exclude='data' \
+            ./ "vps:$VPS_APP_PATH/"
+          rsync -a --chmod=600 "$RUNNER_TEMP/backend.env" "vps:$VPS_APP_PATH/backend/.env"
+
+      - name: Deploy do site e da API
+        run: |
+          ssh vps bash -s -- "$VPS_APP_PATH" <<'REMOTE'
+          set -euo pipefail
+          app_path="$1"
+
+          echo "==> Site (Next.js)"
+          cd "$app_path"
+          docker compose up -d --build
+
+          echo "==> API do diagnóstico (Flyway + Spring Boot)"
+          cd "$app_path/backend"
+          docker compose up -d --build
+
+          echo "==> Limpando imagens antigas"
+          docker image prune -f >/dev/null
+          REMOTE
+
+      - name: Verificar serviços
+        run: |
+          ssh vps bash -s <<'REMOTE'
+          set -euo pipefail
+
+          echo "==> Site"
+          ok=0
+          for i in $(seq 1 20); do
+            if curl -fsS -o /dev/null http://127.0.0.1:3001/; then ok=1; break; fi
+            sleep 3
+          done
+          [ "$ok" = 1 ] || { echo "Site não respondeu em 127.0.0.1:3001"; docker logs --tail 50 bene-rh; exit 1; }
+
+          echo "==> Flyway (deve ter terminado com código 0)"
+          code=$(docker inspect -f '{{.State.ExitCode}}' bene-diagnostico-flyway)
+          [ "$code" = 0 ] || { echo "Flyway saiu com código $code"; docker logs --tail 50 bene-diagnostico-flyway; exit 1; }
+
+          echo "==> API"
+          for i in $(seq 1 20); do
+            [ "$(docker inspect -f '{{.State.Running}}' bene-diagnostico-api)" = true ] && break
+            sleep 3
+          done
+          [ "$(docker inspect -f '{{.State.Running}}' bene-diagnostico-api)" = true ] || { docker logs --tail 80 bene-diagnostico-api; exit 1; }
+          # Sem porta publicada, só conseguimos olhar o log: a aplicação precisa ter terminado de subir.
+          for i in $(seq 1 20); do
+            docker logs bene-diagnostico-api 2>&1 | grep -q "Started DiagnosticoApplication" && exit 0
+            sleep 3
+          done
+          echo "API não iniciou a tempo"; docker logs --tail 80 bene-diagnostico-api; exit 1
+          REMOTE
