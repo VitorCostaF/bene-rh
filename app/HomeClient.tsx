@@ -1,139 +1,10 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect } from "react";
 import { SiteHeader } from "./components/SiteHeader";
 import { SiteFooter } from "./components/SiteFooter";
 import { NewsletterSection } from "./components/NewsletterForm";
 import { BrandMarquee } from "./components/BrandMarquee";
-import { DIAGNOSTIC_ENDPOINT, whatsappUrl } from "./lib/site";
-type Pain = "vaga" | "estrutura" | "recorrente" | "sensivel";
-type A = { label: string; value: number; pain?: Pain };
-type Q = { id: string; title: string; answers: A[] };
-const questions: Q[] = [
-  {
-    id: "porte",
-    title: "Quantas pessoas trabalham na empresa?",
-    answers: [
-      { label: "1 a 7", value: 2 },
-      { label: "8 a 20", value: 8 },
-      { label: "21 a 60", value: 10 },
-      { label: "Mais de 60", value: 4 },
-    ],
-  },
-  {
-    id: "estrutura",
-    title: "Quem cuida dos temas de pessoas hoje?",
-    answers: [
-      { label: "RH com processos claros", value: 1 },
-      { label: "Uma pessoa acumula a função", value: 6, pain: "estrutura" },
-      { label: "Sócios e líderes", value: 8, pain: "estrutura" },
-      { label: "Ninguém de forma definida", value: 10, pain: "estrutura" },
-    ],
-  },
-  {
-    id: "dp",
-    title: "Folha e departamento pessoal estão organizados?",
-    answers: [
-      { label: "Sim, com parceiro ou equipe", value: 1 },
-      { label: "Em parte", value: 4 },
-      { label: "Não; esta é a única necessidade", value: 0 },
-    ],
-  },
-  {
-    id: "contratacao",
-    title: "Como estão as contratações?",
-    answers: [
-      { label: "Sem vagas no momento", value: 0 },
-      {
-        label: "Planejadas para os próximos meses",
-        value: 4,
-        pain: "recorrente",
-      },
-      { label: "Uma vaga aberta ou urgente", value: 10, pain: "vaga" },
-      { label: "Contratações recorrentes", value: 8, pain: "recorrente" },
-    ],
-  },
-  {
-    id: "turnover",
-    title: "Rotatividade ou risco de saída afetam o negócio?",
-    answers: [
-      { label: "Não de forma relevante", value: 0 },
-      { label: "Há sinais, mas sem medição", value: 4, pain: "estrutura" },
-      { label: "Sim, com impacto claro", value: 8, pain: "recorrente" },
-    ],
-  },
-  {
-    id: "onboarding",
-    title: "Novas pessoas têm onboarding definido?",
-    answers: [
-      { label: "Sim, documentado", value: 0 },
-      { label: "Parcialmente", value: 3, pain: "estrutura" },
-      { label: "Não", value: 6, pain: "estrutura" },
-    ],
-  },
-  {
-    id: "gestao",
-    title: "Papéis, desempenho e feedbacks estão claros?",
-    answers: [
-      { label: "Sim", value: 0 },
-      { label: "Em parte", value: 4, pain: "estrutura" },
-      { label: "Não", value: 7, pain: "recorrente" },
-    ],
-  },
-  {
-    id: "desenvolvimento",
-    title: "Cargos, salários e treinamento acompanham o crescimento?",
-    answers: [
-      { label: "Sim", value: 0 },
-      { label: "Precisam de revisão pontual", value: 3, pain: "estrutura" },
-      {
-        label: "Precisam de acompanhamento contínuo",
-        value: 6,
-        pain: "recorrente",
-      },
-    ],
-  },
-  {
-    id: "conflitos",
-    title: "Existe denúncia, assédio, conflito grave ou risco jurídico?",
-    answers: [
-      { label: "Não", value: 0 },
-      {
-        label: "Conflito de gestão, sem denúncia",
-        value: 5,
-        pain: "estrutura",
-      },
-      { label: "Sim ou não tenho certeza", value: 0, pain: "sensivel" },
-    ],
-  },
-  {
-    id: "urgencia",
-    title: "Em quanto tempo você precisa avançar?",
-    answers: [
-      { label: "Até 15 dias", value: 10 },
-      { label: "Até 30 dias", value: 7 },
-      { label: "Em 2 a 3 meses", value: 3 },
-      { label: "Só pesquisando", value: 0 },
-    ],
-  },
-  {
-    id: "orcamento",
-    title: "Há orçamento compatível com a rota apresentada?",
-    answers: [
-      { label: "Sim", value: 5 },
-      { label: "Preciso avaliar a proposta", value: 3 },
-      { label: "Ainda não há orçamento", value: 0 },
-    ],
-  },
-  {
-    id: "consentimento",
-    title: "Posso enviar estas respostas à Benê para gerar sua leitura e retornar o contato?",
-    answers: [
-      { label: "Sim, enviar e gerar minha leitura", value: 6 },
-      { label: "Não, voltar ao início", value: 0 },
-    ],
-  },
-];
 const plans = [
   [
     "Start",
@@ -154,17 +25,6 @@ const plans = [
     "Pro + RH estratégico, educação corporativa e apoio de compliance",
   ],
 ];
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-function parseContact(raw: string) {
-  const value = raw.trim();
-  if (value.length <= 254 && emailPattern.test(value))
-    return { type: "email" as const, value: value.toLowerCase() };
-  const digits = value.replace(/\D/g, "");
-  const national = digits.startsWith("55") ? digits.slice(2) : digits;
-  if (/^[1-9]{2}9?\d{8}$/.test(national))
-    return { type: "phone" as const, value: "55" + national };
-  return null;
-}
 function track(
   event: string,
   props: Record<string, string | number | boolean> = {},
@@ -178,15 +38,6 @@ function track(
   );
 }
 export default function Home() {
-  const [step, setStep] = useState(0),
-    [answers, setAnswers] = useState<A[]>([]),
-    [done, setDone] = useState(false),
-    [awaitingContact, setAwaitingContact] = useState(false),
-    [contact, setContact] = useState(""),
-    [sending, setSending] = useState(false),
-    [sendError, setSendError] = useState("");
-  const questionRef = useRef<HTMLHeadingElement>(null);
-  const didInteract = useRef(false);
   useEffect(() => {
     const u = new URLSearchParams(location.search);
     [
@@ -201,121 +52,10 @@ export default function Home() {
     });
     track("page_view", { source: u.get("utm_source") || "direct" });
   }, []);
-  useEffect(() => {
-    if (didInteract.current) questionRef.current?.focus();
-    else didInteract.current = true;
-  }, [step, done, awaitingContact]);
-  const sensitive = answers.some((a) => a.pain === "sensivel");
-  const pain = useMemo(() => {
-    const c: Record<string, number> = {};
-    answers.forEach((a) => {
-      if (a.pain) c[a.pain] = (c[a.pain] || 0) + 1;
-    });
-    return Object.entries(c).sort((a, b) => b[1] - a[1])[0]?.[0] || "estrutura";
-  }, [answers]);
-  const result = sensitive
-    ? [
-        "Atendimento humano necessário",
-        "Conversa reservada",
-        "O tema exige análise humana e não seguirá por automação. A Benê fará uma triagem cuidadosa e, quando necessário, orientará a busca de profissional habilitado.",
-      ]
-    : pain === "vaga"
-      ? [
-          "Necessidade de contratação",
-          "R&S sob demanda",
-          "A rota indicada é conduzir uma vaga padrão com briefing, triagem, entrevistas iniciais e shortlist.",
-        ]
-      : pain === "recorrente"
-        ? [
-            "Demanda contínua",
-            "RH por assinatura",
-            "A necessidade pede continuidade. O plano depende do porte e do volume real de demandas.",
-          ]
-        : [
-            "RH pede estrutura",
-            "Diagnóstico + Estruturação",
-            "A rota indicada é organizar gargalos, até três processos e um plano de 90 dias.",
-          ];
-  const parsedContact = parseContact(contact);
-  function reset() {
-    setStep(0);
-    setAnswers([]);
-    setDone(false);
-    setAwaitingContact(false);
-    setContact("");
-    setSendError("");
-  }
-  async function submitDiagnostic() {
-    if (!parsedContact || sending) return;
-    setSending(true);
-    setSendError("");
-    const utm: Record<string, string> = {};
-    [
-      "utm_source",
-      "utm_medium",
-      "utm_campaign",
-      "utm_content",
-      "utm_term",
-    ].forEach((k) => {
-      const v = sessionStorage.getItem(k);
-      if (v) utm[k] = v;
-    });
-    const score = answers.reduce((t, x) => t + x.value, 0);
-    try {
-      const response = await fetch(DIAGNOSTIC_ENDPOINT, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          contact: parsedContact,
-          answers: answers.map((a, i) => ({
-            id: questions[i].id,
-            question: questions[i].title,
-            answer: a.label,
-            value: a.value,
-          })),
-          score,
-          route: result[1],
-          consent: true,
-          source: "site-diagnostico",
-          locale: "pt",
-          page: location.href,
-          submittedAt: new Date().toISOString(),
-          utm,
-        }),
-      });
-      if (!response.ok) throw new Error("request failed");
-      track("diagnostic_complete", { score, sensitive: false });
-      setAwaitingContact(false);
-      setDone(true);
-    } catch {
-      setSendError(
-        "Não foi possível enviar agora. Confira sua conexão e tente novamente.",
-      );
-    } finally {
-      setSending(false);
-    }
-  }
-  function choose(a: A) {
-    if (questions[step].id === "consentimento" && a.label.startsWith("Não"))
-      return reset();
-    const n = [...answers, a];
-    setAnswers(n);
-    track("diagnostic_answer", {
-      question: questions[step].id,
-      step: step + 1,
-    });
-    if (a.pain === "sensivel") {
-      setDone(true);
-      track("diagnostic_sensitive_stop", { step: step + 1 });
-      return;
-    }
-    if (step === questions.length - 1) setAwaitingContact(true);
-    else setStep(step + 1);
-  }
   const cta = (label: string) => (
     <a
       className="button"
-      href="#diagnostico"
+      href="/agendar"
       onClick={() => track("cta_click", { label })}
     >
       {label}
@@ -338,14 +78,13 @@ export default function Home() {
                 crescer com mais clareza - enquanto você cuida do negócio.
               </p>
               <div className="actions">
-                {cta("Quero meu Diagnóstico Benê")}
+                {cta("Agendar uma conversa")}
                 <a className="textLink" href="#recrutamento">
                   Preciso contratar →
                 </a>
               </div>
               <p className="micro">
-                Diagnóstico gratuito · resultado na hora · conversa de até 30
-                minutos com a Benê, se você quiser avançar
+                Conversa de até 30 minutos com a Benê, se você quiser avançar
               </p>
             </div>
             <aside className="heroCard">
@@ -380,8 +119,8 @@ export default function Home() {
               ["Preciso de RH contínuo", "Planos mensais", "#planos"],
               [
                 "Não sei por onde começar",
-                "Diagnóstico gratuito",
-                "#diagnostico",
+                "Conversa com a Benê",
+                "/agendar",
               ],
             ].map((x, i) => (
               <a className="pain" href={x[2]} key={x[0]}>
@@ -557,12 +296,11 @@ export default function Home() {
         </section>
         <section className="section shell" id="como">
           <p className="eyebrow">SIMPLES DESDE O PRIMEIRO CONTATO</p>
-          <div className="steps">
+          <div className="steps three">
             {[
-              ["01", "Diagnóstico", "Maturidade, dor prioritária e rota."],
-              ["02", "Conversa", "Até 30 minutos para validar o contexto."],
-              ["03", "Proposta", "Escopo, prazo e limites claros."],
-              ["04", "Execução", "Status, evidências e próximos passos."],
+              ["01", "Conversa", "Até 30 minutos para validar o contexto."],
+              ["02", "Proposta", "Escopo, prazo e limites claros."],
+              ["03", "Execução", "Status, evidências e próximos passos."],
             ].map((x) => (
               <div key={x[0]}>
                 <b>{x[0]}</b>
@@ -570,172 +308,6 @@ export default function Home() {
                 <p>{x[2]}</p>
               </div>
             ))}
-          </div>
-        </section>
-        <section className="section diagnostic" id="diagnostico">
-          <div className="shell diagnosticGrid">
-            <div>
-              <p className="eyebrow">DIAGNÓSTICO BENÊ</p>
-              <h2>Descubra a prioridade do seu RH.</h2>
-              <p>
-                São 12 perguntas. Ao final, você informa um e-mail ou WhatsApp e
-                suas respostas são enviadas à Benê para gerar a leitura e
-                retornarmos o contato.
-              </p>
-              <div className="privacyNote">
-                Não descreva nomes, denúncias ou informações pessoais. Se houver
-                situação sensível, o diagnóstico para imediatamente e orienta um
-                contato reservado.
-              </div>
-            </div>
-            <div className="quiz">
-              {!done && awaitingContact ? (
-                <>
-                  <small>ÚLTIMO PASSO</small>
-                  <h3 ref={questionRef} tabIndex={-1}>
-                    Para onde enviamos sua leitura?
-                  </h3>
-                  <form
-                    className="newsletterField"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      submitDiagnostic();
-                    }}
-                    noValidate
-                  >
-                    <label htmlFor="diagnostic-contact">
-                      E-mail ou WhatsApp com DDD
-                    </label>
-                    <input
-                      id="diagnostic-contact"
-                      className="diagnosticContact"
-                      type="text"
-                      inputMode="email"
-                      autoComplete="email tel"
-                      value={contact}
-                      onChange={(e) => setContact(e.target.value)}
-                      placeholder="voce@empresa.com.br ou (11) 91234-5678"
-                      aria-invalid={contact.trim() !== "" && !parsedContact}
-                      aria-describedby="diagnostic-contact-msg"
-                    />
-                    <p
-                      id="diagnostic-contact-msg"
-                      className={`formMessage ${sendError ? "error" : ""}`}
-                      role={sendError ? "alert" : undefined}
-                    >
-                      {sendError ||
-                        (contact.trim() !== "" && !parsedContact
-                          ? "Informe um e-mail válido ou um número com DDD."
-                          : "Usaremos este contato só para retornar sobre o diagnóstico.")}
-                    </p>
-                    <button
-                      className="button"
-                      type="submit"
-                      disabled={!parsedContact || sending}
-                    >
-                      {sending ? "Enviando…" : "Enviar e ver minha leitura"}
-                    </button>
-                  </form>
-                  <button
-                    className="reset"
-                    onClick={() => {
-                      setAnswers(answers.slice(0, -1));
-                      setAwaitingContact(false);
-                      setSendError("");
-                    }}
-                  >
-                    Voltar
-                  </button>
-                </>
-              ) : !done ? (
-                <>
-                  <div
-                    className="progress"
-                    role="progressbar"
-                    aria-label="Progresso do diagnóstico"
-                    aria-valuemin={1}
-                    aria-valuemax={questions.length}
-                    aria-valuenow={step + 1}
-                  >
-                    <span
-                      style={{
-                        width: `${((step + 1) / questions.length) * 100}%`,
-                      }}
-                    />
-                  </div>
-                  <small>
-                    PERGUNTA {step + 1} DE {questions.length}
-                  </small>
-                  <h3 ref={questionRef} tabIndex={-1}>
-                    {questions[step].title}
-                  </h3>
-                  <div className="options">
-                    {questions[step].answers.map((a) => (
-                      <button key={a.label} onClick={() => choose(a)}>
-                        {a.label}
-                        <span aria-hidden="true">→</span>
-                      </button>
-                    ))}
-                  </div>
-                  {step > 0 && (
-                    <button
-                      className="reset"
-                      onClick={() => {
-                        setAnswers(answers.slice(0, -1));
-                        setStep(step - 1);
-                      }}
-                    >
-                      Voltar
-                    </button>
-                  )}
-                </>
-              ) : (
-                <>
-                  <small>LEITURA INICIAL</small>
-                  <h3 ref={questionRef} tabIndex={-1}>
-                    {result[0]}
-                  </h3>
-                  <p>{result[2]}</p>
-                  <div className="route">
-                    <span>ROTA INDICADA</span>
-                    <strong>{result[1]}</strong>
-                  </div>
-                  {sensitive && (
-                    <div className="privacyNote">
-                      <b>Importante:</b> não envie nomes, relatos, documentos ou
-                      provas pelo primeiro contato. Peça apenas uma conversa
-                      reservada.
-                    </div>
-                  )}
-                  <div className="resultActions">
-                    <a
-                      className="button"
-                      href={whatsappUrl(
-                        sensitive
-                          ? "Olá, preciso solicitar uma conversa reservada sobre uma situação sensível de pessoas. Não enviarei detalhes por aqui."
-                          : "Olá, concluí o Diagnóstico Benê e a rota indicada foi: " +
-                              result[1] +
-                              ". Quero entender o próximo passo.",
-                      )}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Conversar pelo WhatsApp
-                    </a>
-                    <a className="buttonSecondary" href="/agendar">
-                      Agendar conversa
-                    </a>
-                    <button className="reset" onClick={reset}>
-                      Refazer
-                    </button>
-                  </div>
-                  <p className="micro">
-                    A leitura é inicial e não substitui análise humana, parecer
-                    jurídico ou proposta comercial.
-                  </p>
-                </>
-              )}
-            </div>
           </div>
         </section>
         <section className="section shell">
@@ -826,10 +398,6 @@ export default function Home() {
               "Não. Você pode começar por uma vaga padrão ou por estruturação.",
             ],
             [
-              "O Diagnóstico entrega um plano completo?",
-              "Não. Ele indica maturidade, dor prioritária e rota.",
-            ],
-            [
               "Posso cancelar a assinatura a qualquer momento?",
               "Há vigência mínima de três meses e depois aviso de 30 dias.",
             ],
@@ -852,7 +420,6 @@ export default function Home() {
             <p className="eyebrow">SEU PRÓXIMO PASSO PODE SER SIMPLES ✦</p>
             <h2>Comece entendendo o que seu RH precisa agora.</h2>
             <div className="centerActions">
-              {cta("Fazer o Diagnóstico Benê")}
               <a className="button lightButton" href="/agendar">
                 Agendar uma conversa
               </a>
