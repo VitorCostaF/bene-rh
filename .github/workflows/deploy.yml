@@ -1,0 +1,122 @@
+name: Deploy front (VPS)
+
+# Dispara a cada commit na main. Isso inclui PRs mergeadas (o merge é um push na main).
+# PR fechada sem merge não altera a main, então não gera deploy.
+# Commits que mexem só em backend/ não disparam, porque este workflow publica apenas o front.
+# Também pode ser disparado manualmente em Actions > Deploy front (VPS) > Run workflow.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'backend/**'
+  workflow_dispatch:
+
+# Um deploy por vez; se chegar outro commit, ele espera o atual terminar (não cancela no meio).
+concurrency:
+  group: deploy-front-vps
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verificar (tsc + lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+
+  deploy:
+    name: Deploy na VPS
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_PORT: ${{ secrets.VPS_PORT }}
+      VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir secrets obrigatórios
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          missing=0
+          for name in VPS_HOST VPS_USER VPS_APP_PATH VPS_SSH_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Secret $name não configurado (Settings > Secrets and variables > Actions)."
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - name: Preparar SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          port="${VPS_PORT:-22}"
+          if [ -n "$VPS_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "$port" -H "$VPS_HOST" > ~/.ssh/known_hosts
+          fi
+          cat > ~/.ssh/config <<CONF
+          Host vps
+            HostName $VPS_HOST
+            User $VPS_USER
+            Port $port
+            IdentityFile ~/.ssh/id_deploy
+            IdentitiesOnly yes
+            ServerAliveInterval 30
+          CONF
+          sed -i 's/^ *//' ~/.ssh/config
+
+      - name: Enviar arquivos para a VPS
+        run: |
+          ssh vps "mkdir -p '$VPS_APP_PATH'"
+          rsync -az --delete \
+            --exclude='.git' --exclude='.github' \
+            --exclude='node_modules' --exclude='dist' --exclude='.next' --exclude='.vinext' \
+            --exclude='backend' \
+            --exclude='.env' --exclude='data' \
+            ./ "vps:$VPS_APP_PATH/"
+
+      - name: Build e subida do site
+        run: |
+          ssh vps bash -s -- "$VPS_APP_PATH" <<'REMOTE'
+          set -euo pipefail
+          cd "$1"
+          docker compose up -d --build
+          docker image prune -f >/dev/null
+          REMOTE
+
+      - name: Verificar o site
+        run: |
+          ssh vps bash -s <<'REMOTE'
+          set -euo pipefail
+          for i in $(seq 1 20); do
+            if curl -fsS -o /dev/null http://127.0.0.1:3001/; then
+              echo "Site respondeu em 127.0.0.1:3001"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Site não respondeu em 127.0.0.1:3001"
+          docker logs --tail 50 bene-rh
+          exit 1
+          REMOTE
