@@ -8,19 +8,16 @@ import { BrandMarquee } from "./components/BrandMarquee";
 const plans = [
   [
     "Start",
-    "R$ 1.500/mês",
     "Até 10 pessoas · 1 vaga padrão ativa",
     "R&S, onboarding e suporte mensal",
   ],
   [
     "Pro",
-    "R$ 3.500/mês",
     "Até 30 pessoas · 2 vagas padrão ativas",
     "Start + gestão, treinamento e cultura",
   ],
   [
     "Full",
-    "R$ 7.000/mês",
     "Até 60 pessoas · 3 vagas padrão ativas",
     "Pro + RH estratégico, educação corporativa e apoio de compliance",
   ],
@@ -153,8 +150,6 @@ export default function Home() {
             </div>
             <div className="priceCard">
               <p>R&S sob demanda</p>
-              <strong>R$ 1.500</strong>
-              <span>por vaga padrão</span>
               <small>
                 Busca executiva, perfil técnico raro, volume, testes pagos,
                 admissional e folha não inclusos.
@@ -167,7 +162,6 @@ export default function Home() {
           <div className="offerGrid reverse">
             <div className="priceCard dark">
               <p>Diagnóstico + Estruturação</p>
-              <strong>R$ 2.500</strong>
               <span>projeto fechado</span>
               <small>
                 Indicado para empresas com até 20 pessoas e uma única unidade.
@@ -210,10 +204,9 @@ export default function Home() {
                 >
                   {i === 1 && <span className="tag">MAIS INDICADO</span>}
                   <h3>Benê {p[0]}</h3>
-                  <strong>{p[1]}</strong>
-                  <p>{p[2]}</p>
+                  <p>{p[1]}</p>
                   <hr />
-                  <p>{p[3]}</p>
+                  <p>{p[2]}</p>
                   <a href={`/planos/${p[0].toLowerCase()}`}>
                     Ver se é para mim →
                   </a>
