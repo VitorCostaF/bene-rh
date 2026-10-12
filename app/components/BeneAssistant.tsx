@@ -18,7 +18,7 @@ const replies = {
     content:
       "Claro! Deixe seu e-mail abaixo para receber conteúdos práticos que ajudam a tornar a rotina de pessoas mais leve. O cadastro só acontece com a sua autorização.",
     start:
-      "Sem problema — você não precisa saber o nome da solução. Vamos entender o momento da empresa e encontrar juntos uma boa primeira rota. O Diagnóstico Benê leva poucos minutos.",
+      "Sem problema — você não precisa saber o nome da solução. Vamos entender o momento da empresa e encontrar juntos uma boa primeira rota. Uma conversa de até 30 minutos com a Benê já ajuda.",
   },
   en: {
     welcome:
@@ -75,7 +75,9 @@ export function BeneAssistant() {
         ? `${home}#estruturacao`
         : intent === "ongoing"
           ? `${home}#planos`
-          : `${home}#diagnostico`;
+          : en
+            ? `${home}#diagnostico`
+            : "/agendar";
   const labels = en
     ? {
         title: "Talk to Benê",

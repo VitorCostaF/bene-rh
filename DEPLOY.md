@@ -4,7 +4,9 @@ O workflow `.github/workflows/deploy.yml` publica **só o front** (o site Next.j
 
 Fluxo: `tsc` + `lint` → envia o código por `rsync` para a VPS (sem `backend/`) → `docker compose up -d --build` → confere se o site responde em `127.0.0.1:3001`.
 
-## Secrets (Settings → Secrets and variables → Actions)
+## Secrets
+
+O job de deploy usa o environment **`benerh-production`**. Crie-o em Settings → Environments e cadastre os secrets abaixo nele (Environment secrets). Secrets do repositório (Settings → Secrets and variables → Actions) também funcionam, mas o do environment tem prioridade. No environment dá para exigir aprovação antes do deploy e limitar a `main`.
 
 | Secret | Obrigatório | O que é |
 |---|---|---|
