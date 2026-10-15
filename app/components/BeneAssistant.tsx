@@ -121,7 +121,7 @@ export function BeneAssistant() {
               <b id="bene-assistant-title">{labels.title}</b>
               <span>{labels.subtitle}</span>
             </div>
-            <button
+            <button id="btn-assistant-close"
               ref={closeRef}
               onClick={() => setOpen(false)}
               aria-label={labels.close}
@@ -149,23 +149,23 @@ export function BeneAssistant() {
               />
             ) : (
               intent !== "start" && (
-                <a className="buttonSecondary assistantRoute" href={link}>
+                <a id="btn-assistant-route" className="buttonSecondary assistantRoute" href={link}>
                   {labels.see} →
                 </a>
               )
             )}
             <div className="assistantChoices">
-              <button onClick={() => setIntent("hire")}>{labels.hire}</button>
-              <button onClick={() => setIntent("organize")}>
+              <button id="btn-assistant-intent-hire" onClick={() => setIntent("hire")}>{labels.hire}</button>
+              <button id="btn-assistant-intent-organize" onClick={() => setIntent("organize")}>
                 {labels.organize}
               </button>
-              <button onClick={() => setIntent("ongoing")}>
+              <button id="btn-assistant-intent-ongoing" onClick={() => setIntent("ongoing")}>
                 {labels.ongoing}
               </button>
-              <button onClick={() => setIntent("content")}>
+              <button id="btn-assistant-intent-content" onClick={() => setIntent("content")}>
                 {labels.content}
               </button>
-              <button onClick={() => setIntent("start")}>{labels.start}</button>
+              <button id="btn-assistant-intent-start" onClick={() => setIntent("start")}>{labels.start}</button>
             </div>
             <small>
               {en
@@ -175,7 +175,7 @@ export function BeneAssistant() {
           </div>
         </div>
       )}
-      <button
+      <button id="btn-assistant-launcher"
         ref={launcherRef}
         className="assistantLauncher"
         onClick={() => setOpen(!open)}

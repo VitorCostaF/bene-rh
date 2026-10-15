@@ -47,7 +47,7 @@ export function BrandMarquee({locale='pt'}:{locale?:'pt'|'en'}){
     </div>
     <div className="shell ecosystemControls">
       <p>{en?'These are our own brands and projects.':'São marcas próprias e projetos do nosso ecossistema.'}</p>
-      <button type="button" className="ecosystemToggle" aria-pressed={paused} onClick={()=>setPaused(!paused)}>{paused?(en?'Resume motion':'Retomar movimento'):(en?'Pause motion':'Pausar movimento')}</button>
+      <button id="btn-marquee-toggle" type="button" className="ecosystemToggle" aria-pressed={paused} onClick={()=>setPaused(!paused)}>{paused?(en?'Resume motion':'Retomar movimento'):(en?'Pause motion':'Pausar movimento')}</button>
     </div>
   </section>;
 }
