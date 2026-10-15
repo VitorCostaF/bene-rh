@@ -3,6 +3,7 @@ import { usePathname } from "next/navigation";
 import { Brand } from "./Brand";
 import { whatsappUrl } from "../lib/site";
 import { ExperienceControls } from "./ExperienceControls";
+import { slugId } from "../lib/ids";
 
 export function SiteHeader() {
   const path = usePathname() || "/";
@@ -29,19 +30,19 @@ export function SiteHeader() {
         className="nav shell"
         aria-label={en ? "Main navigation" : "Navegação principal"}
       >
-        <Brand />
+        <Brand id="link-header-brand" />
         <div className="navlinks">
           {navLinks.map(([label, href]) => (
-            <a key={href} href={href}>
+            <a id={`link-header-nav-${slugId(label)}`} key={href} href={href}>
               {label}
             </a>
           ))}
         </div>
         <div className="navActions">
-          <a className="textButton" href={en ? "/en/schedule" : "/agendar"}>
+          <a id="btn-header-schedule" className="textButton" href={en ? "/en/schedule" : "/agendar"}>
             {en ? "Schedule" : "Agendar"}
           </a>
-          <a
+          <a id="btn-header-whatsapp"
             className="button"
             href={whatsappUrl(
               en
@@ -56,19 +57,19 @@ export function SiteHeader() {
         </div>
         <ExperienceControls />
         <details className="mobileMenu">
-          <summary aria-label={en ? "Open menu" : "Abrir menu"}>
+          <summary id="btn-header-menu-toggle" aria-label={en ? "Open menu" : "Abrir menu"}>
             {en ? "Menu" : "Menu"}
           </summary>
           <div>
             {navLinks.map(([label, href]) => (
-              <a key={href} href={href}>
+              <a id={`link-header-mobile-nav-${slugId(label)}`} key={href} href={href}>
                 {label}
               </a>
             ))}
-            <a href={en ? "/en/schedule" : "/agendar"}>
+            <a id="link-header-mobile-schedule" href={en ? "/en/schedule" : "/agendar"}>
               {en ? "Schedule a call" : "Agendar conversa"}
             </a>
-            <a href={whatsappUrl()} target="_blank" rel="noopener noreferrer">
+            <a id="link-header-mobile-whatsapp" href={whatsappUrl()} target="_blank" rel="noopener noreferrer">
               WhatsApp
             </a>
           </div>
