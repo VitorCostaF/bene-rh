@@ -5,6 +5,7 @@ import { SiteHeader } from "./components/SiteHeader";
 import { SiteFooter } from "./components/SiteFooter";
 import { NewsletterSection } from "./components/NewsletterForm";
 import { BrandMarquee } from "./components/BrandMarquee";
+import { slugId } from "./lib/ids";
 const plans = [
   [
     "Start",
@@ -49,8 +50,8 @@ export default function Home() {
     });
     track("page_view", { source: u.get("utm_source") || "direct" });
   }, []);
-  const cta = (label: string) => (
-    <a
+  const cta = (label: string, id: string) => (
+    <a id={id}
       className="button"
       href="/agendar"
       onClick={() => track("cta_click", { label })}
@@ -75,8 +76,8 @@ export default function Home() {
                 crescer com mais clareza - enquanto você cuida do negócio.
               </p>
               <div className="actions">
-                {cta("Agendar uma conversa")}
-                <a className="textLink" href="#recrutamento">
+                {cta("Agendar uma conversa", "btn-home-hero-schedule")}
+                <a id="link-home-hero-hire" className="textLink" href="#recrutamento">
                   Preciso contratar →
                 </a>
               </div>
@@ -120,7 +121,7 @@ export default function Home() {
                 "/agendar",
               ],
             ].map((x, i) => (
-              <a className="pain" href={x[2]} key={x[0]}>
+              <a id={`link-home-situation-${slugId(x[0])}`} className="pain" href={x[2]} key={x[0]}>
                 <span>0{i + 1}</span>
                 <h3>{x[0]}</h3>
                 <p>{x[1]}</p>
@@ -154,7 +155,7 @@ export default function Home() {
                 Busca executiva, perfil técnico raro, volume, testes pagos,
                 admissional e folha não inclusos.
               </small>
-              {cta("Quero avaliar minha vaga")}
+              {cta("Quero avaliar minha vaga", "btn-home-recruiting-cta")}
             </div>
           </div>
         </section>
@@ -167,7 +168,7 @@ export default function Home() {
                 Indicado para empresas com até 20 pessoas e uma única unidade.
                 Entrega em até 10 dias úteis.
               </small>
-              {cta("Quero organizar meu RH")}
+              {cta("Quero organizar meu RH", "btn-home-structuring-cta")}
             </div>
             <div>
               <p className="eyebrow">ROTA 02 · ORGANIZAÇÃO</p>
@@ -207,7 +208,7 @@ export default function Home() {
                   <p>{p[1]}</p>
                   <hr />
                   <p>{p[2]}</p>
-                  <a href={`/planos/${p[0].toLowerCase()}`}>
+                  <a id={`link-home-plan-${p[0].toLowerCase()}`} href={`/planos/${p[0].toLowerCase()}`}>
                     Ver se é para mim →
                   </a>
                 </article>
@@ -345,7 +346,7 @@ export default function Home() {
               </p>
             </div>
             <div className="previewGrid">
-              <a href="/blog/contratacao-sem-improviso">
+              <a id="link-home-blog-contratacao-sem-improviso" href="/blog/contratacao-sem-improviso">
                 <span>RECRUTAMENTO</span>
                 <h3>Contratação sem improviso</h3>
                 <p>
@@ -354,7 +355,7 @@ export default function Home() {
                 </p>
                 <b>Ler artigo →</b>
               </a>
-              <a href="/blog/quando-a-empresa-precisa-de-rh">
+              <a id="link-home-blog-quando-a-empresa-precisa-de-rh" href="/blog/quando-a-empresa-precisa-de-rh">
                 <span>GESTÃO DE PESSOAS</span>
                 <h3>Quando a empresa precisa de RH?</h3>
                 <p>
@@ -363,7 +364,7 @@ export default function Home() {
                 </p>
                 <b>Ler artigo →</b>
               </a>
-              <a href="/blog/dono-centraliza-decisoes">
+              <a id="link-home-blog-dono-centraliza-decisoes" href="/blog/dono-centraliza-decisoes">
                 <span>LIDERANÇA</span>
                 <h3>Quando o dono centraliza tudo</h3>
                 <p>
@@ -373,7 +374,7 @@ export default function Home() {
                 <b>Ler artigo →</b>
               </a>
             </div>
-            <a className="textLink blogAll" href="/blog">
+            <a id="link-home-blog-all" className="textLink blogAll" href="/blog">
               Ver todos os artigos →
             </a>
           </div>
@@ -413,7 +414,7 @@ export default function Home() {
             <p className="eyebrow">SEU PRÓXIMO PASSO PODE SER SIMPLES ✦</p>
             <h2>Comece entendendo o que seu RH precisa agora.</h2>
             <div className="centerActions">
-              <a className="button lightButton" href="/agendar">
+              <a id="btn-home-final-schedule" className="button lightButton" href="/agendar">
                 Agendar uma conversa
               </a>
             </div>
