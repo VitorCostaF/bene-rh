@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { NewsletterForm } from "./NewsletterForm";
+import { trackEvent } from "../lib/analytics";
 
 type Intent = "hire" | "organize" | "ongoing" | "content" | "start";
 const replies = {
@@ -76,7 +77,7 @@ export function BeneAssistant() {
         : intent === "ongoing"
           ? `${home}#planos`
           : en
-            ? `${home}#diagnostico`
+              ? "/en/schedule"
             : "/agendar";
   const labels = en
     ? {
@@ -155,17 +156,17 @@ export function BeneAssistant() {
               )
             )}
             <div className="assistantChoices">
-              <button onClick={() => setIntent("hire")}>{labels.hire}</button>
-              <button onClick={() => setIntent("organize")}>
+              <button onClick={() => {setIntent("hire");trackEvent("assistant_choice",{choice:"hire",language:en?"en":"pt",page_path:path})}}>{labels.hire}</button>
+              <button onClick={() => {setIntent("organize");trackEvent("assistant_choice",{choice:"organize",language:en?"en":"pt",page_path:path})}}>
                 {labels.organize}
               </button>
-              <button onClick={() => setIntent("ongoing")}>
+              <button onClick={() => {setIntent("ongoing");trackEvent("assistant_choice",{choice:"ongoing",language:en?"en":"pt",page_path:path})}}>
                 {labels.ongoing}
               </button>
-              <button onClick={() => setIntent("content")}>
+              <button onClick={() => {setIntent("content");trackEvent("assistant_choice",{choice:"content",language:en?"en":"pt",page_path:path})}}>
                 {labels.content}
               </button>
-              <button onClick={() => setIntent("start")}>{labels.start}</button>
+              <button onClick={() => {setIntent("start");trackEvent("assistant_choice",{choice:"start",language:en?"en":"pt",page_path:path})}}>{labels.start}</button>
             </div>
             <small>
               {en
@@ -178,7 +179,7 @@ export function BeneAssistant() {
       <button
         ref={launcherRef}
         className="assistantLauncher"
-        onClick={() => setOpen(!open)}
+        onClick={() => {const next=!open;setOpen(next);if(next)trackEvent("assistant_open",{language:en?"en":"pt",page_path:path})}}
         aria-expanded={open}
         aria-label={open ? labels.close : labels.open}
       >

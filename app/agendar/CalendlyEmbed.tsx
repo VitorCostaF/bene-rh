@@ -1,6 +1,7 @@
 'use client';
 
 import {useEffect} from 'react';
+import {trackEvent} from '../lib/analytics';
 
 declare global {
   interface Window {
@@ -13,23 +14,29 @@ declare global {
 export function CalendlyEmbed({url,locale='pt'}:{url?:string;locale?:'pt'|'en'}){
   useEffect(()=>{
     if(!url)return;
+    const onCalendlyMessage=(event:MessageEvent)=>{
+      if(event.origin!=='https://calendly.com')return;
+      const name=(event.data as {event?:string}|null)?.event;
+      if(name==='calendly.event_scheduled')trackEvent('schedule_complete',{scheduling_provider:'calendly',language:locale});
+    };
+    window.addEventListener('message',onCalendlyMessage);
     const container=document.getElementById('calendly-embed');
-    if(!container)return;
+    if(!container)return()=>window.removeEventListener('message',onCalendlyMessage);
     const initialize=()=>{
       if(!window.Calendly)return;
       container.innerHTML='';
       window.Calendly.initInlineWidget({url,parentElement:container});
     };
     const existing=document.querySelector<HTMLScriptElement>('script[data-bene-calendly]');
-    if(existing){initialize();return}
+    if(existing){initialize();return()=>window.removeEventListener('message',onCalendlyMessage)}
     const script=document.createElement('script');
     script.src='https://assets.calendly.com/assets/external/widget.js';
     script.async=true;
     script.dataset.beneCalendly='true';
     script.addEventListener('load',initialize,{once:true});
     document.body.appendChild(script);
-    return()=>script.removeEventListener('load',initialize);
-  },[url]);
+    return()=>{script.removeEventListener('load',initialize);window.removeEventListener('message',onCalendlyMessage)};
+  },[url,locale]);
 
   if(!url)return <div className="calendarPending" role="status"><span aria-hidden="true">◷</span><h2>{locale==='en'?'Calendly is being prepared':'Calendly em preparação'}</h2><p>{locale==='en'?'This page is ready for the calendar. The public Benê event link still needs to be added.':'A página está pronta para receber o calendário. Falta apenas adicionar o link público do evento da Benê no Calendly.'}</p></div>;
 

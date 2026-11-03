@@ -53,6 +53,8 @@ export default function Home() {
     <a
       className="button"
       href="/agendar"
+      data-analytics-location="home-cta"
+      data-analytics-interest={label.includes("vaga") ? "recruitment" : label.includes("organizar") ? "organization" : "general"}
       onClick={() => track("cta_click", { label })}
     >
       {label}
@@ -76,7 +78,7 @@ export default function Home() {
               </p>
               <div className="actions">
                 {cta("Agendar uma conversa")}
-                <a className="textLink" href="#recrutamento">
+              <a className="textLink" href="#recrutamento" data-analytics-location="hero" data-analytics-interest="recruitment">
                   Preciso contratar →
                 </a>
               </div>
@@ -120,7 +122,7 @@ export default function Home() {
                 "/agendar",
               ],
             ].map((x, i) => (
-              <a className="pain" href={x[2]} key={x[0]}>
+              <a className="pain" href={x[2]} key={x[0]} data-analytics-location="pain-card" data-analytics-interest={["recruitment","organization","ongoing","general"][i]}>
                 <span>0{i + 1}</span>
                 <h3>{x[0]}</h3>
                 <p>{x[1]}</p>
@@ -207,7 +209,7 @@ export default function Home() {
                   <p>{p[1]}</p>
                   <hr />
                   <p>{p[2]}</p>
-                  <a href={`/planos/${p[0].toLowerCase()}`}>
+                  <a href={`/planos/${p[0].toLowerCase()}`} data-analytics-location="plan-card">
                     Ver se é para mim →
                   </a>
                 </article>
