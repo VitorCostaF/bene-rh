@@ -122,7 +122,7 @@ export function BeneAssistant() {
               <b id="bene-assistant-title">{labels.title}</b>
               <span>{labels.subtitle}</span>
             </div>
-            <button
+            <button id="btn-assistant-close"
               ref={closeRef}
               onClick={() => setOpen(false)}
               aria-label={labels.close}
@@ -150,23 +150,23 @@ export function BeneAssistant() {
               />
             ) : (
               intent !== "start" && (
-                <a className="buttonSecondary assistantRoute" href={link}>
+                <a id="btn-assistant-route" className="buttonSecondary assistantRoute" href={link}>
                   {labels.see} →
                 </a>
               )
             )}
             <div className="assistantChoices">
-              <button onClick={() => {setIntent("hire");trackEvent("assistant_choice",{choice:"hire",language:en?"en":"pt",page_path:path})}}>{labels.hire}</button>
-              <button onClick={() => {setIntent("organize");trackEvent("assistant_choice",{choice:"organize",language:en?"en":"pt",page_path:path})}}>
+              <button id="btn-assistant-intent-hire" onClick={() => {setIntent("hire");trackEvent("assistant_choice",{choice:"hire",language:en?"en":"pt",page_path:path})}}>{labels.hire}</button>
+              <button id="btn-assistant-intent-organize" onClick={() => {setIntent("organize");trackEvent("assistant_choice",{choice:"organize",language:en?"en":"pt",page_path:path})}}>
                 {labels.organize}
               </button>
-              <button onClick={() => {setIntent("ongoing");trackEvent("assistant_choice",{choice:"ongoing",language:en?"en":"pt",page_path:path})}}>
+              <button id="btn-assistant-intent-ongoing" onClick={() => {setIntent("ongoing");trackEvent("assistant_choice",{choice:"ongoing",language:en?"en":"pt",page_path:path})}}>
                 {labels.ongoing}
               </button>
-              <button onClick={() => {setIntent("content");trackEvent("assistant_choice",{choice:"content",language:en?"en":"pt",page_path:path})}}>
+              <button id="btn-assistant-intent-content" onClick={() => {setIntent("content");trackEvent("assistant_choice",{choice:"content",language:en?"en":"pt",page_path:path})}}>
                 {labels.content}
               </button>
-              <button onClick={() => {setIntent("start");trackEvent("assistant_choice",{choice:"start",language:en?"en":"pt",page_path:path})}}>{labels.start}</button>
+              <button id="btn-assistant-intent-start" onClick={() => {setIntent("start");trackEvent("assistant_choice",{choice:"start",language:en?"en":"pt",page_path:path})}}>{labels.start}</button>
             </div>
             <small>
               {en
@@ -176,7 +176,7 @@ export function BeneAssistant() {
           </div>
         </div>
       )}
-      <button
+      <button id="btn-assistant-launcher"
         ref={launcherRef}
         className="assistantLauncher"
         onClick={() => {const next=!open;setOpen(next);if(next)trackEvent("assistant_open",{language:en?"en":"pt",page_path:path})}}
