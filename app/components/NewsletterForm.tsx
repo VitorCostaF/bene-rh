@@ -1,6 +1,7 @@
 'use client';
 
 import {FormEvent,useRef,useState} from 'react';
+import {trackEvent} from '../lib/analytics';
 
 type Locale='pt'|'en';
 
@@ -14,17 +15,19 @@ export function NewsletterForm({locale='pt',compact=false,source='site'}:{locale
 
   async function submit(event:FormEvent<HTMLFormElement>){
     event.preventDefault();
-    if(!consent){setStatus('error');setMessage(en?'Please confirm that you agree to receive the newsletter.':'Confirme que concorda em receber a newsletter.');return}
+    if(!consent){setStatus('error');setMessage(en?'Please confirm that you agree to receive the newsletter.':'Confirme que concorda em receber a newsletter.');trackEvent('newsletter_signup_error',{form_location:source,error_type:'consent_required',language:locale});return}
     setStatus('loading');setMessage('');
     try{
       const response=await fetch('/api/newsletter',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email,consent,locale,source,website:honeypot.current?.value||''})});
       const data=await response.json() as {message?:string};
       if(!response.ok)throw new Error(data.message||'error');
       setStatus('success');
+      trackEvent('newsletter_signup',{form_location:source,language:locale});
       setMessage(en?'You are on the Benê list. We will only send relevant HR content.':'Você entrou na lista da Benê. Enviaremos apenas conteúdos relevantes sobre RH.');
       setEmail('');setConsent(false);
     }catch{
       setStatus('error');
+      trackEvent('newsletter_signup_error',{form_location:source,error_type:'request_failed',language:locale});
       setMessage(en?'We could not save your email. Please try again in a moment.':'Não foi possível salvar seu e-mail. Tente novamente em instantes.');
     }
   }

@@ -2,6 +2,7 @@
 
 import {useEffect,useState} from 'react';
 import {usePathname} from 'next/navigation';
+import {trackEvent} from '../lib/analytics';
 
 type Theme='light'|'dark';
 
@@ -36,8 +37,8 @@ export function ExperienceControls(){
     const frame=requestAnimationFrame(()=>{setTheme(initialTheme);setReading(initialReading)});
     return()=>cancelAnimationFrame(frame);
   },[]);
-  function toggleTheme(){const next=theme==='light'?'dark':'light';setTheme(next);document.documentElement.dataset.theme=next;localStorage.setItem('bene_theme',next)}
-  function toggleReading(){const next=!reading;setReading(next);document.documentElement.dataset.reading=next?'comfortable':'default';localStorage.setItem('bene_reading',next?'comfortable':'default')}
+  function toggleTheme(){const next=theme==='light'?'dark':'light';setTheme(next);document.documentElement.dataset.theme=next;localStorage.setItem('bene_theme',next);trackEvent('accessibility_setting',{setting:'theme',state:next,language:en?'en':'pt'})}
+  function toggleReading(){const next=!reading;setReading(next);document.documentElement.dataset.reading=next?'comfortable':'default';localStorage.setItem('bene_reading',next?'comfortable':'default');trackEvent('accessibility_setting',{setting:'comfortable_reading',state:next?'enabled':'disabled',language:en?'en':'pt'})}
   return <div className="experienceControls" role="group" aria-label={en?'Reading and language options':'Opções de leitura e idioma'}>
     <a id="btn-header-language" className="languageButton" href={translatedPath(path,!en)} hrefLang={en?'pt-BR':'en-US'} aria-label={en?'Ver o site em português':'View the site in English'} title={en?'Português':'English'}><span aria-hidden="true">{en?'🇧🇷':'🇺🇸'}</span><b>{en?'PT':'EN'}</b></a>
     <button id="btn-header-theme" type="button" onClick={toggleTheme} aria-label={theme==='dark'?(en?'Switch to light theme':'Mudar para o tema claro'):(en?'Switch to dark theme':'Mudar para o tema escuro')} aria-pressed={theme==='dark'} title={en?'Switch light or dark theme':'Alternar tema claro ou escuro'}><span aria-hidden="true">{theme==='dark'?'☀':'◐'}</span><span className="controlLabel">{theme==='dark'?(en?'Light':'Claro'):(en?'Dark':'Escuro')}</span></button>

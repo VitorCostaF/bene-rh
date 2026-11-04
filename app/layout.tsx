@@ -5,6 +5,7 @@ import { StructuredData } from "./components/StructuredData";
 import { WhatsAppButton } from "./components/WhatsAppButton";
 import { BeneAssistant } from "./components/BeneAssistant";
 import { SkipLink } from "./components/SkipLink";
+import { AnalyticsTracker } from "./components/AnalyticsTracker";
 import {
   defaultMetadata,
   isIndexable,
@@ -72,6 +73,7 @@ export default function RootLayout({
           />
         </noscript>
         <SkipLink />
+        <AnalyticsTracker />
         <StructuredData data={organizationSchema} />
         {children}
         <BeneAssistant />
